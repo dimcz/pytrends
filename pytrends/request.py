@@ -1,17 +1,13 @@
-from itertools import product
 import json
-
 import pandas as pd
 import requests
-
+from itertools import product
+from requests import status_codes
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from requests import status_codes
-
-from pytrends import exceptions
-
 from urllib.parse import quote
 
+from pytrends import exceptions
 
 BASE_TRENDS_URL = 'https://trends.google.com/trends'
 
@@ -79,7 +75,8 @@ class TrendReq(object):
                         **self.requests_args
                     ).cookies.items()))
                 except:
-                    continue
+                    print('Proxy error. Changing IP')
+                    raise
             else:
                 if len(self.proxies) > 0:
                     proxy = {'https': self.proxies[self.proxy_index]}
@@ -277,7 +274,7 @@ class TrendReq(object):
 
         if len(self.geo) > 1:
             final.columns = pd.MultiIndex.from_tuples(
-                [c if isinstance(c, tuple) else (c, ) for c in final],
+                [c if isinstance(c, tuple) else (c,) for c in final],
                 names=['keyword', 'region']
             )
         return final
@@ -308,7 +305,8 @@ class TrendReq(object):
 
         # Split dictionary columns into seperate ones
         for i, column in enumerate(result_df.columns):
-            result_df["[" + str(i) + "] " + str(self.kw_list[i]) + " date"] = result_df[i].apply(pd.Series)["formattedTime"]
+            result_df["[" + str(i) + "] " + str(self.kw_list[i]) + " date"] = result_df[i].apply(pd.Series)[
+                "formattedTime"]
             result_df["[" + str(i) + "] " + str(self.kw_list[i]) + " value"] = result_df[i].apply(pd.Series)["value"]
             result_df = result_df.drop([i], axis=1)
 
@@ -323,7 +321,6 @@ class TrendReq(object):
         result_df = result_df.sort_index()
 
         return result_df
-
 
     def interest_by_region(self, resolution='COUNTRY', inc_low_vol=False,
                            inc_geo_code=False):
@@ -503,13 +500,12 @@ class TrendReq(object):
         result_df = pd.DataFrame(trend['title'] for trend in req_json)
         return result_df.iloc[:, -1]
 
-    def realtime_trending_searches(self, pn='US', cat='all', count =300):
+    def realtime_trending_searches(self, pn='US', cat='all', count=300):
         """Request data from Google Realtime Search Trends section and returns a dataframe"""
         # Don't know what some of the params mean here, followed the nodejs library
         # https://github.com/pat310/google-trends-api/ 's implemenration
 
-
-        #sort: api accepts only 0 as the value, optional parameter
+        # sort: api accepts only 0 as the value, optional parameter
 
         # ri: number of trending stories IDs returned,
         # max value of ri supported is 300, based on emperical evidence
@@ -522,9 +518,10 @@ class TrendReq(object):
         # max value of ri supported is 200, based on emperical evidence
         rs_value = 200
         if count < rs_value:
-            rs_value = count-1
+            rs_value = count - 1
 
-        forms = {'ns': 15, 'geo': pn, 'tz': '300', 'hl': self.hl, 'cat': cat, 'fi' : '0', 'fs' : '0', 'ri' : ri_value, 'rs' : rs_value, 'sort' : 0}
+        forms = {'ns': 15, 'geo': pn, 'tz': '300', 'hl': self.hl, 'cat': cat, 'fi': '0', 'fs': '0', 'ri': ri_value,
+                 'rs': rs_value, 'sort': 0}
         req_json = self._get_data(
             url=TrendReq.REALTIME_TRENDING_SEARCHES_URL,
             method=TrendReq.GET_METHOD,
@@ -535,7 +532,7 @@ class TrendReq(object):
         # parse the returned json
         wanted_keys = ["entityNames", "title"]
 
-        final_json = [{ key: ts[key] for key in ts.keys() if key in wanted_keys} for ts in req_json ]
+        final_json = [{key: ts[key] for key in ts.keys() if key in wanted_keys} for ts in req_json]
 
         result_df = pd.DataFrame(final_json)
 
