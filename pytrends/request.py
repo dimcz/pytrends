@@ -1,5 +1,4 @@
 import json
-import logging
 from itertools import product
 from urllib.parse import quote
 
@@ -13,8 +12,6 @@ from pytrends import exceptions
 from pytrends.exceptions import ProxyError
 
 BASE_TRENDS_URL = 'https://trends.google.com/trends'
-
-logger = logging.getLogger(__name__)
 
 
 class TrendReq(object):
@@ -74,6 +71,7 @@ class TrendReq(object):
         while True:
             if "proxies" in self.requests_args:
                 try:
+                    print(f"using {self.requests_args} proxy from arguments")
                     return dict(filter(lambda i: i[0] == 'NID', requests.get(
                         f'{BASE_TRENDS_URL}/explore/?geo={self.hl[-2:]}',
                         timeout=self.timeout,
@@ -87,6 +85,7 @@ class TrendReq(object):
                 else:
                     raise ProxyError('No more proxies available. Bye!')
                 try:
+                    print(f"using {proxy} proxy from list")
                     return dict(filter(lambda i: i[0] == 'NID', requests.get(
                         f'{BASE_TRENDS_URL}/explore/?geo={self.hl[-2:]}',
                         timeout=self.timeout,
@@ -130,8 +129,8 @@ class TrendReq(object):
 
         s.headers.update(self.headers)
         if len(self.proxies) > 0:
-            logger.debug(f"_get_data with {self.proxies} proxies")
-            self.cookies = self.GetGoogleCookie()
+            # we has cookies when creating class
+            # self.cookies = self.GetGoogleCookie()
             s.proxies.update({'https': self.proxies[self.proxy_index]})
         if method == TrendReq.POST_METHOD:
             response = s.post(url, timeout=self.timeout,
