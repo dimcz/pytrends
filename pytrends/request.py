@@ -81,7 +81,8 @@ class TrendReq(object):
                 if len(self.proxies) > 0:
                     proxy = {'https': self.proxies[self.proxy_index]}
                 else:
-                    proxy = ''
+                    print('No more proxies available. Bye!')
+                    raise
                 try:
                     return dict(filter(lambda i: i[0] == 'NID', requests.get(
                         f'{BASE_TRENDS_URL}/explore/?geo={self.hl[-2:]}',
