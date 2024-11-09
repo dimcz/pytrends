@@ -15,3 +15,8 @@ class ResponseError(Exception):
 class TooManyRequestsError(ResponseError):
     """ Exception raised when the backend returns a 429 error code. """
     pass
+
+
+class ProxyError(Exception):
+    """ Something was wrong with the proxy """
+    pass

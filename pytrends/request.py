@@ -1,15 +1,20 @@
 import json
+import logging
+from itertools import product
+from urllib.parse import quote
+
 import pandas as pd
 import requests
-from itertools import product
 from requests import status_codes
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from urllib.parse import quote
 
 from pytrends import exceptions
+from pytrends.exceptions import ProxyError
 
 BASE_TRENDS_URL = 'https://trends.google.com/trends'
+
+logger = logging.getLogger(__name__)
 
 
 class TrendReq(object):
@@ -75,14 +80,12 @@ class TrendReq(object):
                         **self.requests_args
                     ).cookies.items()))
                 except:
-                    print('Proxy error. Changing IP')
-                    raise
+                    raise ProxyError('Proxy error. Changing IP')
             else:
                 if len(self.proxies) > 0:
                     proxy = {'https': self.proxies[self.proxy_index]}
                 else:
-                    print('No more proxies available. Bye!')
-                    raise
+                    raise ProxyError('No more proxies available. Bye!')
                 try:
                     return dict(filter(lambda i: i[0] == 'NID', requests.get(
                         f'{BASE_TRENDS_URL}/explore/?geo={self.hl[-2:]}',
@@ -91,12 +94,10 @@ class TrendReq(object):
                         **self.requests_args
                     ).cookies.items()))
                 except requests.exceptions.ProxyError:
-                    print('Proxy error. Changing IP')
                     if len(self.proxies) > 1:
                         self.proxies.remove(self.proxies[self.proxy_index])
                     else:
-                        print('No more proxies available. Bye!')
-                        raise
+                        raise ProxyError('No more proxies available. Bye!')
                     continue
 
     def GetNewProxy(self):
@@ -129,6 +130,7 @@ class TrendReq(object):
 
         s.headers.update(self.headers)
         if len(self.proxies) > 0:
+            logger.debug(f"_get_data with {self.proxies} proxies")
             self.cookies = self.GetGoogleCookie()
             s.proxies.update({'https': self.proxies[self.proxy_index]})
         if method == TrendReq.POST_METHOD:
